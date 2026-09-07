@@ -1,17 +1,35 @@
 # my_first_app
 
-A new Flutter project.
+Nama: Yulike Dwi Nurcahyani
+NIM: 244107020146
+Kelas: TI - 3E
 
-## Getting Started
+## Pendahuluan
+Pada pertemuan awal, materi berfokus pada pengenalan dasar ekosistem mobile development. Pembahasan mencakup sejarah perkembangan aplikasi mobile, komparasi pendekatan native, hybrid, dan cross-platform, serta arsitektur internal Flutter bersama bahasa Dart. Selain itu, dipelajari pula konsep fundamental seperti widget tree, struktur direktori proyek, penyegaran sintaks Dart (null safety), hingga konfigurasi lingkungan kerja (Flutter, Android SDK, Android Studio, dan emulator) sampai berhasil memodifikasi dan menjalankan aplikasi perdana.
 
-This project is a starting point for a Flutter application.
+## Fitur
 
-A few resources to get you started if this is your first Flutter project:
+* Bilah aplikasi (AppBar) bertajuk “Profil Mahasiswa”.
+* Tampilan identitas diri berupa nama, NIM, dan ikon instansi pendidikan.
+* Keterangan mata kuliah “Pemrograman Mobile — Minggu 1”.
+* Pembersihan kode bawaan template (counter bawaan dihapus).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Teknologi
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+| Teknologi | Kategori | Keterangan |
+| :--- | :--- | :--- |
+| **Flutter** | Framework | UI toolkit cross-platform |
+| **Dart** | Bahasa | Bahasa pemrograman utama |
+| **Android Studio** | Tool | Android SDK & Emulator |
+| **VS Code** | Editor | Lingkungan penulisan kode |
+| **Git** | Version Control | Pengelolaan repositori kode |
+
+## Screenshoot
+### Flutter Doctor
+![Hasil Flutter Doctor](Doc/Flutter%20Doctor.png)
+
+### Flutter Device
+![Hasil Flutter Device](Doc/Flutter%20Device.png)
+
+### Hasil Aplikasi
+![Hasil Aplikasi](Doc/Hasil.jpeg)
