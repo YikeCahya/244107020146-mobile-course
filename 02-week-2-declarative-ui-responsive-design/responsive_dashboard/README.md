@@ -13,20 +13,20 @@ Pada pertemuan ini, materi berfokus pada perancangan antarmuka deklaratif dan ta
 
 ## Eksperimen warm-up
 Membuat kartu profil sederhana
-![profile](screenshot/Data%20Diri.jpeg)
+![profile](Screenshot/Data%20Diri.jpeg)
 
 ## Eksperimen layout
-![Gelap](screenshot/Tegak%20Gelap%20Sistem.jpeg)
-![Terang](screenshot/Tegak%20Terang%20Sistem.jpeg)
+![Gelap](Screenshot/Tegak%20Gelap%20Sistem.jpeg)
+![Terang](Screenshot/Tegak%20Terang%20Sistem.jpeg)
 
 ## Tugas utama
 ### Narrow
-![Tegak Gelap Tugas](screenshot/Tegak%20Gelap%20Tugas.jpeg)
-![Tegak Terang Tugas](screenshot/Tegak%20Terang%20Tugas.jpeg)
+![Tegak Gelap Tugas](Screenshot/Tegak%20Gelap%20Tugas.jpeg)
+![Tegak Terang Tugas](Screenshot/Tegak%20Terang%20Tugas.jpeg)
 
 ### Landscape
-![Miring Gelap Tugas](screenshot/Miring%20Gelap.jpeg)
-![Miring Terang Tugas](screenshot/Miring%20Terang.jpeg)
+![Miring Gelap Tugas](Screenshot/Miring%20Gelap.jpeg)
+![Miring Terang Tugas](Screenshot/Miring%20Terang.jpeg)
 
 ## AI Prompt Challenge
 ### A. Prompt Desain Tata Letak
@@ -49,4 +49,4 @@ Seluruh widget yang dipakai (LayoutBuilder, Semantics, CupertinoSwitch, ThemeDat
 
 ## Testing dasar
 ### flutter analyze dan flutter test
-![Test](screenshot//Test.jpeg)
+![Test](Screenshot//Test.jpeg)
