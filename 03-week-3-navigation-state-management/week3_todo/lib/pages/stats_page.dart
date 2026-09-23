@@ -16,7 +16,7 @@ class StatsPage extends ConsumerWidget {
         title: const Text('Statistik'),
       ),
       body: statsAsync.when(
-        // 1. Tampilan saat data sedang diambil (loading spinner)
+        // 1. Tampilan saat data sedang diambil
         loading: () => const Center(
           child: CircularProgressIndicator(),
         ),
@@ -41,7 +41,6 @@ class StatsPage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed: () {
-                    // Menjalankan method retry di notifier atau memicu build ulang
                     ref.read(statsProvider.notifier).retry();
                   },
                   icon: const Icon(Icons.refresh),
@@ -52,11 +51,11 @@ class StatsPage extends ConsumerWidget {
           ),
         ),
 
-        // 3. Tampilan saat data berhasil dimuat (ListView berisi 3 item)
+        // 3. Tampilan saat data berhasil dimuat 
         data: (stats) => ListView.separated(
           padding: const EdgeInsets.all(16.0),
           itemCount: stats.length,
-          separatorBuilder: (_, _) => const Divider(),
+          separatorBuilder: (_, __) => const Divider(),
           itemBuilder: (context, index) {
             final item = stats[index];
             return ListTile(

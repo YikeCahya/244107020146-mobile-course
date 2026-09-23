@@ -38,7 +38,7 @@ void main() {
 
     test('Mengeluarkan AsyncError saat simulasi gagal 30%', () async {
   final container = ProviderContainer(
-    retry: (retryCount, error) => null, // matikan retry otomatis di test
+    retry: (retryCount, error) => null, 
     overrides: [
       statsProvider.overrideWith(() => StatsNotifier(FakeRandomFailure())),
     ],
