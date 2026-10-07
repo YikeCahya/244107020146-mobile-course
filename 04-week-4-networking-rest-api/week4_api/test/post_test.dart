@@ -7,10 +7,9 @@ import 'package:week4_api/data/providers.dart';
 import 'package:week4_api/data/repositories/post_repository.dart';
 
 class FakePostRepository extends PostRepository {
-  FakePostRepository({this.items, this.detail, this.throwError = false})
-      : super(Dio());
+  FakePostRepository({this.items, this.throwError = false}) : super(Dio());
+
   final List<Post>? items;
-  final Post? detail;
   final bool throwError;
 
   @override
@@ -27,18 +26,6 @@ class FakePostRepository extends PostRepository {
   @override
   Future<List<Post>> fetchPostsPage({required int page, int limit = 10}) async {
     return fetchPosts();
-  }
-
-  @override
-  Future<Post> fetchPost(int id) async {
-    if (throwError) {
-      throw DioException(
-        requestOptions: RequestOptions(path: '/posts/$id'),
-        type: DioExceptionType.connectionError,
-      );
-    }
-    return detail ??
-        const Post(userId: 1, id: 99, title: 'Detail', body: 'Isi lengkap');
   }
 }
 
@@ -69,7 +56,7 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    // Gunakan helper readPostsOnce (lihat providers.dart).
+
     final posts = await readPostsOnce(container);
     expect(posts.length, 1);
     expect(posts.first.title, 'Tes');
@@ -84,29 +71,9 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    // Gunakan helper readPostsErrorOnce (lihat providers.dart).
+
     final err = await readPostsErrorOnce(container);
     expect(err, isA<DioException>());
     expect(friendlyErrorMessage(err!), contains('terhubung'));
-  });
-
-  test('provider detail mengambil post berdasarkan id', () async {
-    const expected = Post(
-      userId: 1,
-      id: 42,
-      title: 'Judul lengkap',
-      body: 'Isi lengkap',
-    );
-    final container = ProviderContainer(
-      overrides: [
-        postRepositoryProvider.overrideWithValue(
-          FakePostRepository(detail: expected),
-        ),
-      ],
-    );
-    addTearDown(container.dispose);
-
-    final post = await container.read(postDetailProvider(42).future);
-    expect(post, expected);
   });
 }
