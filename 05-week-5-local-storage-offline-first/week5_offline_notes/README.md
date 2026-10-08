@@ -11,3 +11,12 @@ Fitur utama:
 
 Sinkronisasi catatan pada proyek ini masih berupa simulasi dan belum mengirim
 data ke server.
+
+## Refactoring
+
+- Baris catatan menggunakan widget `NoteTile`; catatan yang masih dirty
+  menampilkan badge **Belum tersinkron**.
+- `SyncService` di `lib/data/sync.dart` menangani cache post dan simulasi
+  sinkronisasi. `PostRepository` hanya mengambil post dari API.
+- Detail catatan tersedia di `/note/:id` dan dimuat berdasarkan ID dari
+  `NoteRepository`, jadi halaman detail tidak bergantung pada state daftar.
