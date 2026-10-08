@@ -14,6 +14,17 @@ class NoteRepository {
     return rows.map(Note.fromMap).toList();
   }
 
+  Future<Note?> fetchNoteById(int id) async {
+    final db = await _openDb();
+    final rows = await db.query(
+      'notes',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : Note.fromMap(rows.first);
+  }
+
   Future<Note> addNote({required String title, String body = ''}) async {
     final db = await _openDb();
     final note = Note(
@@ -37,15 +48,4 @@ class NoteRepository {
     await db.delete('notes', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<int> countDirty() async {
-    final db = await _openDb();
-    final rows = await db.rawQuery(
-        'SELECT COUNT(*) AS c FROM notes WHERE dirty = 1');
-    return ((rows.first['c'] as num?)?.toInt() ?? 0);
-  }
-
-  Future<void> markAllSynced() async {
-    final db = await _openDb();
-    await db.update('notes', {'dirty': 0}, where: 'dirty = 1');
-  }
 }

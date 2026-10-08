@@ -1,40 +1,82 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'data/local/note.dart';
 import 'data/models/post.dart';
 import 'data/repositories/note_repository.dart';
 import 'data/repositories/post_repository.dart';
-import 'data/services/note_sync_service.dart';
+import 'data/sync.dart';
+import 'pages/note_detail_page.dart';
 import 'widgets/new_note_dialog.dart';
+import 'widgets/note_tile.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({
     super.key,
     this.noteRepository,
     this.postRepository,
+    this.syncService,
   });
 
   final NoteRepository? noteRepository;
   final PostRepository? postRepository;
+  final SyncService? syncService;
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late final NoteRepository _notes;
+  late final SyncService _sync;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _notes = widget.noteRepository ?? NoteRepository();
+    _sync =
+        widget.syncService ??
+        SyncService(postRepository: widget.postRepository);
+    _router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) =>
+              HomePage(noteRepository: _notes, syncService: _sync),
+        ),
+        GoRoute(
+          path: '/note/:id',
+          builder: (context, state) => NoteDetailPage(
+            repository: _notes,
+            noteId: state.pathParameters['id']!,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Catatan Offline',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
-      home: HomePage(
-        noteRepository: noteRepository ?? NoteRepository(),
-        postRepository: postRepository ?? PostRepository(),
-      ),
+      routerConfig: _router,
     );
   }
 }
@@ -43,11 +85,11 @@ class HomePage extends StatelessWidget {
   const HomePage({
     super.key,
     required this.noteRepository,
-    required this.postRepository,
+    required this.syncService,
   });
 
   final NoteRepository noteRepository;
-  final PostRepository postRepository;
+  final SyncService syncService;
 
   @override
   Widget build(BuildContext context) {
@@ -65,8 +107,8 @@ class HomePage extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            NotesPage(repository: noteRepository),
-            PostsPage(repository: postRepository),
+            NotesPage(repository: noteRepository, syncService: syncService),
+            PostsPage(syncService: syncService),
           ],
         ),
       ),
@@ -75,9 +117,14 @@ class HomePage extends StatelessWidget {
 }
 
 class NotesPage extends StatefulWidget {
-  const NotesPage({super.key, required this.repository});
+  const NotesPage({
+    super.key,
+    required this.repository,
+    required this.syncService,
+  });
 
   final NoteRepository repository;
+  final SyncService syncService;
 
   @override
   State<NotesPage> createState() => _NotesPageState();
@@ -139,11 +186,13 @@ class _NotesPageState extends State<NotesPage> {
   Future<void> _syncNotes() async {
     setState(() => _syncing = true);
     try {
-      final count = await syncNotes(widget.repository);
+      final count = await widget.syncService.syncNotes();
       await _loadNotes();
       if (mounted) {
         _showMessage(
-          count == 0 ? 'Tidak ada catatan untuk disinkronkan.' : '$count catatan tersinkron.',
+          count == 0
+              ? 'Tidak ada catatan untuk disinkronkan.'
+              : '$count catatan tersinkron.',
         );
       }
     } catch (error) {
@@ -154,9 +203,8 @@ class _NotesPageState extends State<NotesPage> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -167,57 +215,50 @@ class _NotesPageState extends State<NotesPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text(_error!))
-              : Column(
-                  children: [
-                    ListTile(
-                      title: Text(
-                        dirtyCount == 0
-                            ? 'Catatan disimpan di perangkat'
-                            : '$dirtyCount catatan belum disinkronkan',
-                      ),
-                      trailing: TextButton.icon(
-                        onPressed: _syncing ? null : _syncNotes,
-                        icon: _syncing
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.sync),
-                        label: const Text('Sync'),
-                      ),
-                    ),
-                    Expanded(
-                      child: _notes.isEmpty
-                          ? const Center(
-                              child: Text('Belum ada catatan. Tekan + untuk menambah.'),
-                            )
-                          : ListView.builder(
-                              itemCount: _notes.length,
-                              itemBuilder: (context, index) {
-                                final note = _notes[index];
-                                return ListTile(
-                                  title: Text(note.title),
-                                  subtitle: Text(
-                                    note.body.isEmpty ? 'Tanpa isi' : note.body,
-                                  ),
-                                  leading: Icon(
-                                    note.dirty
-                                        ? Icons.cloud_upload_outlined
-                                        : Icons.cloud_done_outlined,
-                                  ),
-                                  trailing: IconButton(
-                                    tooltip: 'Hapus catatan',
-                                    onPressed: () => _deleteNote(note),
-                                    icon: const Icon(Icons.delete_outline),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
+          ? Center(child: Text(_error!))
+          : Column(
+              children: [
+                ListTile(
+                  title: Text(
+                    dirtyCount == 0
+                        ? 'Catatan disimpan di perangkat'
+                        : '$dirtyCount catatan belum disinkronkan',
+                  ),
+                  trailing: TextButton.icon(
+                    onPressed: _syncing ? null : _syncNotes,
+                    icon: _syncing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.sync),
+                    label: const Text('Sync'),
+                  ),
                 ),
+                Expanded(
+                  child: _notes.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Belum ada catatan. Tekan + untuk menambah.',
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: _notes.length,
+                          itemBuilder: (context, index) {
+                            final note = _notes[index];
+                            return NoteTile(
+                              note: note,
+                              onTap: note.id == null
+                                  ? null
+                                  : () => context.push('/note/${note.id}'),
+                              onDelete: () => _deleteNote(note),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addNote,
         tooltip: 'Tambah catatan',
@@ -228,9 +269,9 @@ class _NotesPageState extends State<NotesPage> {
 }
 
 class PostsPage extends StatefulWidget {
-  const PostsPage({super.key, required this.repository});
+  const PostsPage({super.key, required this.syncService});
 
-  final PostRepository repository;
+  final SyncService syncService;
 
   @override
   State<PostsPage> createState() => _PostsPageState();
@@ -250,7 +291,7 @@ class _PostsPageState extends State<PostsPage> {
 
   Future<void> _loadCacheThenRefresh() async {
     try {
-      final cached = await widget.repository.readCachedPosts();
+      final cached = await widget.syncService.readCachedPosts();
       if (!mounted) return;
       setState(() {
         _posts = cached;
@@ -272,7 +313,7 @@ class _PostsPageState extends State<PostsPage> {
       _error = null;
     });
     try {
-      final posts = await widget.repository.refreshPosts();
+      final posts = await widget.syncService.refreshPosts();
       if (mounted) setState(() => _posts = posts);
     } catch (error) {
       if (mounted) {
