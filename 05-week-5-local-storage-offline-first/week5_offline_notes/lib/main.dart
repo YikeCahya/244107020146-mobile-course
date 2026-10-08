@@ -1,122 +1,339 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import 'data/local/note.dart';
+import 'data/models/post.dart';
+import 'data/repositories/note_repository.dart';
+import 'data/repositories/post_repository.dart';
+import 'data/services/note_sync_service.dart';
+import 'widgets/new_note_dialog.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+    this.noteRepository,
+    this.postRepository,
+  });
 
-  // This widget is the root of your application.
+  final NoteRepository? noteRepository;
+  final PostRepository? postRepository;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Catatan Offline',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: HomePage(
+        noteRepository: noteRepository ?? NoteRepository(),
+        postRepository: postRepository ?? PostRepository(),
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class HomePage extends StatelessWidget {
+  const HomePage({
+    super.key,
+    required this.noteRepository,
+    required this.postRepository,
+  });
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  final NoteRepository noteRepository;
+  final PostRepository postRepository;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Catatan Offline'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Catatan', icon: Icon(Icons.note_alt_outlined)),
+              Tab(text: 'Posts', icon: Icon(Icons.cloud_download_outlined)),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            NotesPage(repository: noteRepository),
+            PostsPage(repository: postRepository),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class NotesPage extends StatefulWidget {
+  const NotesPage({super.key, required this.repository});
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  final NoteRepository repository;
+
+  @override
+  State<NotesPage> createState() => _NotesPageState();
+}
+
+class _NotesPageState extends State<NotesPage> {
+  List<Note> _notes = [];
+  bool _loading = true;
+  bool _syncing = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotes();
+  }
+
+  Future<void> _loadNotes() async {
+    try {
+      final notes = await widget.repository.fetchNotes();
+      if (!mounted) return;
+      setState(() {
+        _notes = notes;
+        _error = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = 'Catatan gagal dimuat: $error');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _addNote() async {
+    final result = await showDialog<(String, String)>(
+      context: context,
+      builder: (_) => const NewNoteDialog(),
+    );
+    if (result == null) return;
+
+    try {
+      await widget.repository.addNote(title: result.$1, body: result.$2);
+      await _loadNotes();
+    } catch (error) {
+      if (mounted) _showMessage('Catatan gagal disimpan: $error');
+    }
+  }
+
+  Future<void> _deleteNote(Note note) async {
+    if (note.id == null) return;
+    try {
+      await widget.repository.deleteNote(note.id!);
+      await _loadNotes();
+    } catch (error) {
+      if (mounted) _showMessage('Catatan gagal dihapus: $error');
+    }
+  }
+
+  Future<void> _syncNotes() async {
+    setState(() => _syncing = true);
+    try {
+      final count = await syncNotes(widget.repository);
+      await _loadNotes();
+      if (mounted) {
+        _showMessage(
+          count == 0 ? 'Tidak ada catatan untuk disinkronkan.' : '$count catatan tersinkron.',
+        );
+      }
+    } catch (error) {
+      if (mounted) _showMessage('Sinkronisasi gagal: $error');
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final dirtyCount = _notes.where((note) => note.dirty).length;
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Text(_error!))
+              : Column(
+                  children: [
+                    ListTile(
+                      title: Text(
+                        dirtyCount == 0
+                            ? 'Catatan disimpan di perangkat'
+                            : '$dirtyCount catatan belum disinkronkan',
+                      ),
+                      trailing: TextButton.icon(
+                        onPressed: _syncing ? null : _syncNotes,
+                        icon: _syncing
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.sync),
+                        label: const Text('Sync'),
+                      ),
+                    ),
+                    Expanded(
+                      child: _notes.isEmpty
+                          ? const Center(
+                              child: Text('Belum ada catatan. Tekan + untuk menambah.'),
+                            )
+                          : ListView.builder(
+                              itemCount: _notes.length,
+                              itemBuilder: (context, index) {
+                                final note = _notes[index];
+                                return ListTile(
+                                  title: Text(note.title),
+                                  subtitle: Text(
+                                    note.body.isEmpty ? 'Tanpa isi' : note.body,
+                                  ),
+                                  leading: Icon(
+                                    note.dirty
+                                        ? Icons.cloud_upload_outlined
+                                        : Icons.cloud_done_outlined,
+                                  ),
+                                  trailing: IconButton(
+                                    tooltip: 'Hapus catatan',
+                                    onPressed: () => _deleteNote(note),
+                                    icon: const Icon(Icons.delete_outline),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: _addNote,
+        tooltip: 'Tambah catatan',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+class PostsPage extends StatefulWidget {
+  const PostsPage({super.key, required this.repository});
+
+  final PostRepository repository;
+
+  @override
+  State<PostsPage> createState() => _PostsPageState();
+}
+
+class _PostsPageState extends State<PostsPage> {
+  List<Post> _posts = [];
+  bool _loadingCache = true;
+  bool _refreshing = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCacheThenRefresh();
+  }
+
+  Future<void> _loadCacheThenRefresh() async {
+    try {
+      final cached = await widget.repository.readCachedPosts();
+      if (!mounted) return;
+      setState(() {
+        _posts = cached;
+        _loadingCache = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Cache gagal dibaca: $error';
+        _loadingCache = false;
+      });
+    }
+    if (mounted) unawaited(_refreshPosts());
+  }
+
+  Future<void> _refreshPosts() async {
+    setState(() {
+      _refreshing = true;
+      _error = null;
+    });
+    try {
+      final posts = await widget.repository.refreshPosts();
+      if (mounted) setState(() => _posts = posts);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = _posts.isEmpty
+              ? 'Tidak dapat memuat post. Sambungkan ke internet untuk mencoba lagi.'
+              : 'Tidak dapat memperbarui. Menampilkan post yang tersimpan di perangkat.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loadingCache && _posts.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Column(
+      children: [
+        ListTile(
+          title: Text(
+            _error ??
+                (_refreshing
+                    ? 'Menampilkan cache, memeriksa data terbaru…'
+                    : 'Data post tersimpan di perangkat'),
+          ),
+          trailing: IconButton(
+            tooltip: 'Muat ulang',
+            onPressed: _refreshing ? null : _refreshPosts,
+            icon: _refreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
+        ),
+        Expanded(
+          child: _posts.isEmpty
+              ? Center(
+                  child: Text(
+                    'Belum ada post tersimpan.',
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _posts.length,
+                  itemBuilder: (context, index) {
+                    final post = _posts[index];
+                    return ListTile(
+                      leading: CircleAvatar(child: Text('${post.id}')),
+                      title: Text(post.title),
+                      subtitle: Text(post.body),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }
