@@ -30,3 +30,12 @@ Aplikasi punya dua contoh:
 **Catatan:** Sync catatan di praktikum ini hanya simulasi lokal, sehingga tombol
 tetap dapat dijalankan tanpa internet. Aplikasi tidak mendeteksi status Wi-Fi
 secara otomatis.
+
+
+## AI Challenge
+
+1. Daftar catatan di SharedPreferences? Tidak. SharedPreferences hanya menyimpan preferensi tema. catatan disimpan di SQLite—lebih tepat daripada menaruh koleksi besar sebagai JSON di preferences.
+2. Antrean sync? Belum ada. Skema mencatat updated_at, tetapi tidak punya dirty flag atau antrean sinkronisasi, implementasinya CRUD lokal.
+3. Real-time dengan stream? Perbandingan menyebut Drift punya stream, tetapi aplikasi ini tidak mengimplementasikannya. Daftar dimuat dengan FutureBuilder dan diperbarui setelah CRUD.
+4. Boilerplate masuk akal? Ya. Sqflite butuh SQL, pemetaan model, dan pembuatan skema manual. Yang dibuat memakai flutter pub add untuk dependensi serta skema onCreate, belum ada migrasi versi berikutnya. Drift memerlukan setup generator tambahan seperti yang dijelaskan di README.
+5. Keputusan final: SharedPreferences untuk tema dan SQLite/sqflite untuk catatan. SQLite lebih sesuai untuk data terstruktur dan query. Jika stream reaktif serta type-safety jadi kebutuhan penting, saya akan mempertimbangkan Drift.
