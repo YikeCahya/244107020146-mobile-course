@@ -28,6 +28,14 @@ class HomePage extends ConsumerWidget {
               valueListenable: fcmTokenPreview,
               builder: (_, token, _) => Text('FCM token: $token'),
             ),
+            ValueListenableBuilder<bool>(
+              valueListenable: topicSubscribed,
+              builder: (_, on, _) => SwitchListTile(
+                title: const Text('Pengumuman kampus'),
+                value: on,
+                onChanged: setTopicSubscription,
+              ),
+            ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => context.go('/pengumuman/3'),

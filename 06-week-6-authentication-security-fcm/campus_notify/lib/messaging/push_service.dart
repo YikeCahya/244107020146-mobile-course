@@ -18,9 +18,14 @@ Future<void> initLocalNotifications() async {
   const ios = DarwinInitializationSettings();
   await _local.initialize(
     settings: const InitializationSettings(android: android, iOS: ios),
-    onDidReceiveNotificationResponse: (response) {
-      // Klik banner foreground -> teruskan payload ke router.
-      pendingDeepLink = response.payload;
+      onDidReceiveNotificationResponse: (response) {
+      final route = response.payload;
+      if (route == null) return;
+      if (_navigate != null) {
+        _navigate!(route);
+      } else {
+        pendingDeepLink = route;
+      }
     },
   );
 }
@@ -41,4 +46,60 @@ Future<void> initFcmToken(
 
   // 3. Langganan topik kampus.
   await FirebaseMessaging.instance.subscribeToTopic('pengumuman-kampus');
+}
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Jangan akses BuildContext / Riverpod di sini.
+}
+
+void registerBackgroundHandler() {
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+}
+
+void Function(String route)? _navigate;
+
+void listenForeground(void Function(String route) go) {
+  _navigate = go;
+
+  // Foreground: sistem TIDAK menampilkan banner otomatis,
+  // jadi tampilkan manual via local notification.
+  FirebaseMessaging.onMessage.listen((message) async {
+    final route = message.data['route'] ?? '/';
+    const androidDetails = AndroidNotificationDetails(
+      'pengumuman', 'Pengumuman Kampus',
+      importance: Importance.high, priority: Priority.high,
+    );
+    await _local.show(
+      id: message.hashCode,
+      title: message.notification?.title ?? 'Pengumuman',
+      body: message.notification?.body ?? '',
+      notificationDetails: const NotificationDetails(android: androidDetails),
+      payload: route,
+    );
+  });
+
+  // Background -> banner diketuk.
+  FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    go(message.data['route'] ?? '/');
+  });
+}
+
+Future<void> handleTerminated(void Function(String route) go) async {
+  // Terminated -> app dibuka dari notifikasi.
+  final initial = await FirebaseMessaging.instance.getInitialMessage();
+  if (initial != null) go(initial.data['route'] ?? '/');
+  if (pendingDeepLink != null) go(pendingDeepLink!);
+}
+
+const campusTopic = 'pengumuman-kampus';
+final topicSubscribed = ValueNotifier<bool>(true);
+
+Future<void> setTopicSubscription(bool subscribe) async {
+  if (subscribe) {
+    await FirebaseMessaging.instance.subscribeToTopic(campusTopic);
+  } else {
+    await FirebaseMessaging.instance.unsubscribeFromTopic(campusTopic);
+  }
+  topicSubscribed.value = subscribe;
 }

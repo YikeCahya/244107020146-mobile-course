@@ -37,6 +37,8 @@ Future<void> main() async {
     ],
   );
 
+  registerBackgroundHandler();
+
   runApp(UncontrolledProviderScope(
     container: container,
     child: MaterialApp.router(routerConfig: router),
@@ -50,4 +52,9 @@ Future<void> main() async {
       // await dio.post('/devices', data: {'fcm_token': token, 'platform': 'android'});
     });
   });
+
+  await container.read(authStateProvider.future);
+  listenForeground(router.go);
+  await handleTerminated(router.go);
+
 }
