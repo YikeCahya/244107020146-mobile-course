@@ -11,3 +11,13 @@
 
 ### Test
 ![Test Praktikum 1](docs/Test%20Praktikum.png)
+
+
+## Praktikum 2: FCM, permission, dan token lifecycle
+### Hasil
+![Hasil Praktikum Notifikasi](docs/fcm-console-test.jpeg)
+Saat notifikasi di klik, maka akan mengarah ke aplikasi.
+![Hasil Praktikum 2](docs/Hasil%20Praktikum%202.jpeg)
+
+### Test
+![Test Praktikum 2](docs/Test%20Praktikum%202.png)

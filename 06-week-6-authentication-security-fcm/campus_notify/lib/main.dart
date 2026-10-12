@@ -5,10 +5,14 @@ import 'pages/announcement_page.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'providers/auth_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'messaging/push_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+  await Firebase.initializeApp();
+  await initLocalNotifications();
+
   final container = ProviderContainer();
   final authChanged = ValueNotifier<int>(0);
   container.listen(authStateProvider, (_, _) => authChanged.value++);
@@ -37,4 +41,13 @@ void main() {
     container: container,
     child: MaterialApp.router(routerConfig: router),
   ));
+
+  requestNotificationPermission().then((granted) {
+    if (!granted) return;
+    initFcmToken(onToken: (token) async {
+      fcmTokenPreview.value = '${token.substring(0, 12)}...';
+      // Nanti, saat backend ada:
+      // await dio.post('/devices', data: {'fcm_token': token, 'platform': 'android'});
+    });
+  });
 }

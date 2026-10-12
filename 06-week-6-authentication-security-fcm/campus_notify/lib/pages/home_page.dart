@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../messaging/push_service.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -23,6 +24,10 @@ class HomePage extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Anda sudah login'),
+            ValueListenableBuilder<String>(
+              valueListenable: fcmTokenPreview,
+              builder: (_, token, _) => Text('FCM token: $token'),
+            ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: () => context.go('/pengumuman/3'),
