@@ -1,17 +1,28 @@
-# campus_notify
+# Campus Notify
 
-A new Flutter project.
+## Tujuan
+Aplikasi pengumuman kampus dengan login, penyimpanan token aman, dan push notification FCM.
 
-## Getting Started
+## Fitur utama
+- Login mock dengan guard route (GoRouter + Riverpod)
+- Token di flutter_secure_storage, Dio refresh otomatis saat 401
+- FCM: permission, token + onTokenRefresh, topik pengumuman-kampus
+- Klik notifikasi membuka /pengumuman/:id
 
-This project is a starting point for a Flutter application.
+## Stack
+Flutter, Riverpod, GoRouter, Dio, flutter_secure_storage, Firebase Messaging, flutter_local_notifications
 
-A few resources to get you started if this is your first Flutter project:
+## Cara menjalankan
+flutter pub get
+(letakkan google-services.json di android/app/)
+flutter run
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Pengujian tiga app state
+| State      | Diharapkan                               | Hasil | Bukti |
+|------------|------------------------------------------|-------|-------|
+| Foreground | Banner lokal muncul, klik ke /pengumuman/2 | Lolos   |![Uji Foreground](Docs/mini%20project%20foreground.jpeg)|
+| Background | Banner sistem muncul, klik ke rute benar    | Lolos   |![Uji Background](Docs//mini%20project%20background.jpeg)|
+| Terminated | Terbuka ke rute benar via getInitialMessage | Lolos   |![Uji Terminated](Docs/mini%20project%20terminated.jpeg)|
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Keterbatasan
+Belum ada backend: pengiriman token ke POST /devices baru didokumentasikan (body: fcm_token, platform).
