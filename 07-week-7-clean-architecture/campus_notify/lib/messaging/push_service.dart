@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/foundation.dart';
+import '../core/format.dart';
 
 final _local = FlutterLocalNotificationsPlugin();
 
@@ -65,7 +66,7 @@ void listenForeground(void Function(String route) go) {
   // Foreground: sistem TIDAK menampilkan banner otomatis,
   // jadi tampilkan manual via local notification.
   FirebaseMessaging.onMessage.listen((message) async {
-    final route = message.data['route'] ?? '/';
+    final route = routeFromMessage(message.data);
     const androidDetails = AndroidNotificationDetails(
       'pengumuman', 'Pengumuman Kampus',
       importance: Importance.high, priority: Priority.high,
@@ -81,14 +82,14 @@ void listenForeground(void Function(String route) go) {
 
   // Background -> banner diketuk.
   FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    go(message.data['route'] ?? '/');
+    go(routeFromMessage(message.data));
   });
 }
 
 Future<void> handleTerminated(void Function(String route) go) async {
   // Terminated -> app dibuka dari notifikasi.
   final initial = await FirebaseMessaging.instance.getInitialMessage();
-  if (initial != null) go(initial.data['route'] ?? '/');
+  if (initial != null) go(routeFromMessage(initial.data));
   if (pendingDeepLink != null) go(pendingDeepLink!);
 }
 

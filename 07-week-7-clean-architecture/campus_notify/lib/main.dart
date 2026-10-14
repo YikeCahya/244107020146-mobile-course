@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'pages/announcement_page.dart';
+import 'features/announcements/presentation/pages/announcement_page.dart';
 import 'pages/home_page.dart';
-import 'pages/login_page.dart';
-import 'providers/auth_provider.dart';
+import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/providers/auth_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'messaging/push_service.dart';
 

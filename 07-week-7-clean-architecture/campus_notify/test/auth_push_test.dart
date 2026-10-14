@@ -1,9 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-
-String routeFromMessage(Map<String, String> data) {
-  final route = data['route'] ?? '/';
-  return route.startsWith('/') ? route : '/$route';
-}
+import 'package:campus_notify/core/format.dart';
 
 class FakeTokenStore {
   String? access;

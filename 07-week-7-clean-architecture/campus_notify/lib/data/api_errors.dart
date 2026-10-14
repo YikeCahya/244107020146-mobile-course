@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../core/failures.dart';
 
 String friendlyMessage(Object error) {
   if (error is! DioException) return 'Terjadi kesalahan. Coba lagi.';
@@ -22,3 +23,6 @@ String friendlyMessage(Object error) {
       return 'Terjadi kesalahan. Coba lagi.';
   }
 }
+
+Failure failureFromError(Object error) =>
+    NetworkFailure(friendlyMessage(error));

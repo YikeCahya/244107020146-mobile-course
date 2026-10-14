@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../providers/auth_provider.dart';
+//import 'package:go_router/go_router.dart';
+import '../features/auth/presentation/providers/auth_provider.dart';
 import '../messaging/push_service.dart';
-import '../data/announcements.dart';
+import '../features/announcements/presentation/pages/announcements_list.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -37,18 +37,7 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           const Divider(),
-          Expanded(
-            child: ListView(
-              children: [
-                for (final a in announcements)
-                  ListTile(
-                    title: Text(a.title),
-                    subtitle: Text(a.date),
-                    onTap: () => context.push('/pengumuman/${a.id}'),
-                  ),
-              ],
-            ),
-          ),
+          const Expanded(child: AnnouncementsList()),
         ],
       ),
     );
